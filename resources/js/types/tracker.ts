@@ -1,5 +1,6 @@
 export type InternshipSettings = {
     startDate: string | null;
+    expectedEndDate: string | null;
     requiredHours: number | null;
     regularWorkdays: string[];
     defaultStartTime: string | null;

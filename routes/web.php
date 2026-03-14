@@ -23,6 +23,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('work-sessions', [WorkSessionController::class, 'store'])->name('work-sessions.store');
     Route::post('work-sessions/bulk-add', [WorkSessionController::class, 'bulkStore'])->name('work-sessions.bulk-store');
+    Route::delete('work-sessions/by-date', [WorkSessionController::class, 'destroyByDate'])->name('work-sessions.destroy-by-date');
     Route::patch('work-sessions/{workSession}', [WorkSessionController::class, 'update'])->name('work-sessions.update');
     Route::delete('work-sessions/{workSession}', [WorkSessionController::class, 'destroy'])->name('work-sessions.destroy');
     Route::post('work-sessions/clock-in', [WorkSessionController::class, 'clockIn'])->name('work-sessions.clock-in');

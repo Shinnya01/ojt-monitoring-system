@@ -23,6 +23,7 @@ class InternshipSettingFactory extends Factory
         return [
             'user_id' => User::factory(),
             'start_date' => fake()->dateTimeBetween('-2 months', 'today'),
+            'expected_end_date' => fake()->dateTimeBetween('+2 weeks', '+4 months'),
             'required_hours' => 486,
             'regular_workdays' => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
             'default_start_time' => '09:00:00',
@@ -35,6 +36,7 @@ class InternshipSettingFactory extends Factory
     {
         return $this->state(fn (): array => [
             'start_date' => null,
+            'expected_end_date' => null,
             'required_hours' => null,
             'regular_workdays' => null,
             'default_start_time' => null,

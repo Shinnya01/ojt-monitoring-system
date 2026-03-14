@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\InternshipSetting;
 use App\Models\User;
+use App\Models\WorkSession;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -92,6 +94,41 @@ class InternshipSettingsTest extends TestCase
             ->get(route('dashboard'))
             ->assertInertia(fn (Assert $page) => $page
                 ->where('showSetupDialog', false),
+            );
+    }
+
+    public function test_expected_end_date_is_projected_from_attendance_pace(): void
+    {
+        $user = User::factory()->create();
+
+        InternshipSetting::factory()->for($user)->create([
+            'start_date' => '2026-03-03',
+            'required_hours' => 20,
+            'regular_workdays' => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+            'default_start_time' => '09:00:00',
+            'default_end_time' => '18:00:00',
+        ]);
+
+        WorkSession::factory()->for($user)->create([
+            'date' => '2026-03-03',
+            'start_time' => '2026-03-03 09:00:00',
+            'end_time' => '2026-03-03 14:00:00',
+            'duration_minutes' => 300,
+        ]);
+
+        WorkSession::factory()->for($user)->create([
+            'date' => '2026-03-04',
+            'start_time' => '2026-03-04 09:00:00',
+            'end_time' => '2026-03-04 14:00:00',
+            'duration_minutes' => 300,
+        ]);
+
+        $this->travelTo(Carbon::create(2026, 3, 5, 9, 0));
+
+        $this->actingAs($user)
+            ->get(route('hr-counter'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('internshipSettings.expectedEndDate', '2026-03-06'),
             );
     }
 }

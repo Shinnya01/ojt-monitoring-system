@@ -213,6 +213,7 @@ class BuildsInternshipTrackerData
 
         return [
             'startDate' => $setting->start_date?->toDateString(),
+            'expectedEndDate' => $setting->expectedEndDate()?->toDateString(),
             'requiredHours' => $setting->required_hours,
             'regularWorkdays' => $setting->regular_workdays ?? [],
             'defaultStartTime' => self::defaultTime($setting->default_start_time, null),

@@ -167,6 +167,41 @@ class WorkSessionManagementTest extends TestCase
         ]);
     }
 
+    public function test_deleting_work_sessions_by_date_removes_all_sessions_for_that_day(): void
+    {
+        $user = User::factory()->create();
+
+        WorkSession::factory()->for($user)->count(2)->create([
+            'date' => '2026-03-14',
+            'start_time' => '2026-03-14 09:00:00',
+            'end_time' => '2026-03-14 12:00:00',
+            'duration_minutes' => 180,
+        ]);
+
+        WorkSession::factory()->for($user)->create([
+            'date' => '2026-03-15',
+            'start_time' => '2026-03-15 09:00:00',
+            'end_time' => '2026-03-15 12:00:00',
+            'duration_minutes' => 180,
+        ]);
+
+        $this->actingAs($user)
+            ->delete(route('work-sessions.destroy-by-date'), [
+                'date' => '2026-03-14',
+            ])
+            ->assertRedirect(route('hr-counter'));
+
+        $this->assertSame(1, $user->fresh()->workSessions()->count());
+        $this->assertDatabaseMissing('work_sessions', [
+            'user_id' => $user->id,
+            'date' => '2026-03-14',
+        ]);
+        $this->assertDatabaseHas('work_sessions', [
+            'user_id' => $user->id,
+            'date' => '2026-03-15',
+        ]);
+    }
+
     public function test_bulk_add_creates_sessions_from_internship_schedule(): void
     {
         $user = User::factory()->create();

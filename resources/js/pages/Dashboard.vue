@@ -151,7 +151,7 @@ const formatDateTime = formatDateTimeForPH;
                                 <p class="text-sm font-bold text-foreground mt-1">
                                     {{
                                         internshipSettings?.isSetupComplete
-                                            ? `Started ${internshipSettings.startDate}`
+                                            ? `Started ${internshipSettings.startDate}${internshipSettings.expectedEndDate ? `, ends ${internshipSettings.expectedEndDate}` : ''}`
                                             : 'Setup Incomplete'
                                     }}
                                 </p>

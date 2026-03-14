@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\BulkStoreWorkSessionsRequest;
 use App\Http\Requests\ClockOutWorkSessionRequest;
+use App\Http\Requests\DestroyWorkSessionsByDateRequest;
 use App\Http\Requests\StoreWorkSessionRequest;
 use App\Http\Requests\UpdateWorkSessionRequest;
 use App\Models\InternshipSetting;
@@ -135,6 +136,19 @@ class WorkSessionController extends Controller
         $workSession->delete();
 
         return to_route('hr-counter');
+    }
+
+    public function destroyByDate(DestroyWorkSessionsByDateRequest $request): RedirectResponse
+    {
+        $date = $request->string('date')->toString();
+
+        $deleted = $request->user()->workSessions()
+            ->whereDate('date', $date)
+            ->delete();
+
+        return to_route('hr-counter')->with('success', $deleted > 0
+            ? "Deleted {$deleted} work session(s) for {$date}."
+            : 'No work sessions were found for that date.');
     }
 
     public function clockIn(Request $request): RedirectResponse

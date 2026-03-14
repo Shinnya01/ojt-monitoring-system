@@ -98,6 +98,42 @@ function syncForm(): void {
     form.default_end_time = props.settings?.defaultEndTime ?? '18:00';
 }
 
+const projectedEndDate = computed(() => {
+    if (!form.start_date || !form.required_hours || !form.regular_workdays.length || !form.default_start_time || !form.default_end_time) {
+        return null;
+    }
+
+    const [startHour, startMinute] = form.default_start_time.split(':').map(Number);
+    const [endHour, endMinute] = form.default_end_time.split(':').map(Number);
+    const dailyMinutes = ((endHour * 60) + endMinute) - ((startHour * 60) + startMinute);
+
+    if (dailyMinutes <= 0) {
+        return null;
+    }
+
+    const requiredMinutes = form.required_hours * 60;
+    const workdays = new Set(form.regular_workdays);
+    const weekdayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    let accumulatedMinutes = 0;
+    let date = new Date(`${form.start_date}T00:00:00`);
+
+    for (let index = 0; index < 3660; index += 1) {
+        if (workdays.has(weekdayKeys[date.getDay()])) {
+            accumulatedMinutes += dailyMinutes;
+
+            if (accumulatedMinutes >= requiredMinutes) {
+                return date.toLocaleDateString('en-CA', {
+                    timeZone: 'Asia/Manila',
+                });
+            }
+        }
+
+        date.setDate(date.getDate() + 1);
+    }
+
+    return null;
+});
+
 function toggleWorkday(day: string, checked: boolean | 'indeterminate'): void {
     const next = new Set(form.regular_workdays);
 
@@ -137,6 +173,16 @@ function submit(): void {
                         type="date"
                     />
                     <InputError :message="form.errors.start_date" />
+                </div>
+
+                <div class="grid gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                    <Label class="text-sm">Projected internship end date</Label>
+                    <p class="text-sm font-semibold text-slate-950">
+                        {{ projectedEndDate ?? 'Set your schedule details to calculate this automatically.' }}
+                    </p>
+                    <p class="text-xs text-slate-500">
+                        Based on your start date, required hours, regular workdays, and default daily schedule.
+                    </p>
                 </div>
 
                 <div class="grid gap-2">

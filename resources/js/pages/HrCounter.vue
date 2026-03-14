@@ -9,6 +9,7 @@ import {
     bulkStore as bulkStoreWorkSessions,
     clockIn as clockInWorkSessions,
     clockOut as clockOutWorkSessions,
+    destroyByDate as destroyWorkSessionsByDate,
     destroy as destroyWorkSession,
     store as storeWorkSessions,
     update as updateWorkSession,
@@ -72,6 +73,7 @@ const selectedCalendarDate = ref(props.manualEntryDefaults.date);
 const selectedDailyNote = ref('');
 const isSessionUpdateConfirmOpen = ref(false);
 const isSessionDeleteConfirmOpen = ref(false);
+const isDateDeleteConfirmOpen = ref(false);
 const sessionPendingDelete = ref<ActiveSession | null>(null);
 const savedDailyNotes = ref<Record<string, string>>(
     Object.fromEntries(props.dailyNotes.map((dailyNote) => [dailyNote.date, dailyNote.note ?? ''])),
@@ -100,6 +102,10 @@ const bulkAddForm = useForm({
 const dailyNoteForm = useForm({
     date: props.manualEntryDefaults.date,
     note: '',
+});
+
+const deleteDateHoursForm = useForm({
+    date: props.manualEntryDefaults.date,
 });
 
 const clockError = computed(() => page.props.errors?.clock);
@@ -188,6 +194,24 @@ function saveDailyNote(): void {
 
             savedDailyNotes.value = next;
             toast.success((page.props as { flash?: { success?: string } }).flash?.success ?? 'Daily note saved.');
+        },
+    });
+}
+
+function requestDeleteDateHours(): void {
+    deleteDateHoursForm.date = selectedCalendarDate.value;
+    isDateDeleteConfirmOpen.value = true;
+}
+
+function confirmDeleteDateHours(): void {
+    deleteDateHoursForm.delete(destroyWorkSessionsByDate.url(), {
+        preserveScroll: true,
+        data: {
+            date: selectedCalendarDate.value,
+        },
+        onSuccess: (page) => {
+            isDateDeleteConfirmOpen.value = false;
+            toast.success((page.props as { flash?: { success?: string } }).flash?.success ?? 'Date hours deleted.');
         },
     });
 }
@@ -297,10 +321,12 @@ function submitBulkAdd(): void {
                 :calendar-days="calendarDays"
                 :internship-settings="internshipSettings"
                 :is-saving-notes="dailyNoteForm.processing"
+                :is-deleting-date-hours="deleteDateHoursForm.processing"
                 :note-error="dailyNoteError"
                 @update:selected-date="updateSelectedCalendarDate"
                 @update:selected-notes="updateSelectedCalendarNotes"
                 @save-note="saveDailyNote"
+                @delete-date-hours="requestDeleteDateHours"
             />
 
             <section class="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
@@ -337,7 +363,7 @@ function submitBulkAdd(): void {
                                 <p class="text-sm font-semibold">Internship Setup</p>
                                 <p class="text-xs text-muted-foreground">
                                     {{ internshipSettings 
-                                        ? `${internshipSettings.requiredHours} hours • ${internshipSettings.regularWorkdays.join(', ')}` 
+                                        ? `${internshipSettings.requiredHours} hours • ${internshipSettings.regularWorkdays.join(', ')}${internshipSettings.expectedEndDate ? ` • ends ${internshipSettings.expectedEndDate}` : ''}` 
                                         : 'No setup saved yet' 
                                     }}
                                 </p>
@@ -534,6 +560,24 @@ function submitBulkAdd(): void {
                             </Button>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+            <Dialog v-model:open="isDateDeleteConfirmOpen">
+                <DialogContent class="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Delete logged hours for this date?</DialogTitle>
+                        <DialogDescription>
+                            This removes all work sessions on {{ selectedCalendarDate }}. Your daily note will stay saved.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" @click="isDateDeleteConfirmOpen = false">
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" :disabled="deleteDateHoursForm.processing" @click="confirmDeleteDateHours">
+                            Delete date hours
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>

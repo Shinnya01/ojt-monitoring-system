@@ -15,6 +15,7 @@ const props = defineProps<{
     calendarDays: CalendarDay[];
     internshipSettings?: InternshipSettings | null;
     isSavingNotes?: boolean;
+    isDeletingDateHours?: boolean;
     noteError?: string;
 }>();
 
@@ -22,6 +23,7 @@ const emit = defineEmits<{
     (e: 'update:selectedDate', value: string): void;
     (e: 'update:selectedNotes', value: string): void;
     (e: 'saveNote'): void;
+    (e: 'deleteDateHours'): void;
 }>();
 
 const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -42,6 +44,7 @@ watch(
 
 const daysByDate = computed(() => new Map(props.calendarDays.map((day) => [day.date, day])));
 const selectedDay = computed(() => daysByDate.value.get(props.selectedDate) ?? null);
+const projectedEndDate = computed(() => props.internshipSettings?.expectedEndDate ?? null);
 const monthLabel = computed(() =>
     new Intl.DateTimeFormat('en-PH', {
         month: 'long',
@@ -67,6 +70,7 @@ const calendarCells = computed(() => {
             isCurrentMonth: date.getUTCMonth() === monthStart.getUTCMonth(),
             isToday: isoDate === today,
             isSelected: isoDate === props.selectedDate,
+            isProjectedEndDate: isoDate === projectedEndDate.value,
             isRegularWorkday: props.internshipSettings?.regularWorkdays.includes(weekdayKey) ?? false,
             sessionCount: details?.sessionCount ?? 0,
             totalMinutes: details?.totalMinutes ?? 0,
@@ -165,6 +169,9 @@ function todayInPH(): Date {
                 <div class="flex items-center gap-2">
                     <CardTitle class="text-xl font-bold tracking-tight">Internship Calendar</CardTitle>
                     <Badge variant="outline" class="font-medium">View & Notes</Badge>
+                    <Badge v-if="projectedEndDate" variant="secondary" class="font-medium">
+                        Projected end: {{ projectedEndDate }}
+                    </Badge>
                 </div>
                 <CardDescription>
                     Select a date to log daily notes and review recorded hours.
@@ -219,6 +226,8 @@ function todayInPH(): Date {
                             :class="[
                                 cell.isSelected
                                     ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                                    : cell.isProjectedEndDate
+                                      ? 'border-sky-500 bg-sky-500/10 ring-1 ring-sky-500'
                                     : cell.sessionCount > 0
                                       ? 'border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10'
                                       : 'border-border bg-background hover:bg-muted/50',
@@ -238,6 +247,9 @@ function todayInPH(): Date {
                                 </span>
                                 
                                 <div v-if="cell.sessionCount > 0" class="size-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                                <div v-else-if="cell.isProjectedEndDate" class="rounded-full bg-sky-500 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-white">
+                                    End
+                                </div>
                             </div>
 
                             <div class="mt-auto pt-2">
@@ -259,6 +271,9 @@ function todayInPH(): Date {
                     <p class="font-bold text-foreground">{{ selectedDate }}</p>
                     <p class="text-xs text-muted-foreground">
                         {{ selectedDay ? `${formatDuration(selectedDay.totalMinutes)} logged` : 'No hours recorded' }}
+                    </p>
+                    <p v-if="projectedEndDate" class="text-xs text-sky-600">
+                        Projected internship completion: {{ projectedEndDate }}
                     </p>
                 </div>
 
@@ -283,6 +298,17 @@ function todayInPH(): Date {
                         @click="$emit('saveNote')"
                     >
                         {{ isSavingNotes ? 'Saving...' : 'Save daily note' }}
+                    </Button>
+
+                    <Button
+                        v-if="selectedDay && selectedDay.sessionCount > 0"
+                        variant="destructive"
+                        class="w-full font-bold"
+                        size="sm"
+                        :disabled="isDeletingDateHours"
+                        @click="$emit('deleteDateHours')"
+                    >
+                        {{ isDeletingDateHours ? 'Deleting...' : 'Delete logged hours for this date' }}
                     </Button>
                 </div>
 
