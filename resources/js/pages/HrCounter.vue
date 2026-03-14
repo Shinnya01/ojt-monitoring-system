@@ -483,7 +483,59 @@ function submitBulkAdd(): void {
                 </DialogContent>
             </Dialog>
             <Dialog v-model:open="isBulkAddOpen">
-                </Dialog>
+                <DialogContent class="sm:max-w-xl">
+                    <DialogHeader>
+                        <DialogTitle>Bulk add past sessions</DialogTitle>
+                        <DialogDescription>
+                            Create sessions from a date range using your internship setup. Dates that already have sessions will be skipped.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form class="grid gap-4" @submit.prevent="submitBulkAdd">
+                        <p
+                            v-if="bulkError"
+                            class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600"
+                        >
+                            {{ bulkError }}
+                        </p>
+
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div class="grid gap-2">
+                                <Label for="bulk-start-date">Start date</Label>
+                                <Input id="bulk-start-date" v-model="bulkAddForm.start_date" type="date" />
+                                <InputError :message="bulkAddForm.errors.start_date" />
+                            </div>
+
+                            <div class="grid gap-2">
+                                <Label for="bulk-end-date">End date</Label>
+                                <Input id="bulk-end-date" v-model="bulkAddForm.end_date" type="date" />
+                                <InputError :message="bulkAddForm.errors.end_date" />
+                            </div>
+                        </div>
+
+                        <div class="grid gap-2 md:max-w-xs">
+                            <Label for="bulk-break-minutes">Break minutes per session</Label>
+                            <Input id="bulk-break-minutes" v-model="bulkAddForm.break_minutes" type="number" min="0" />
+                            <InputError :message="bulkAddForm.errors.break_minutes" />
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label for="bulk-notes">Notes for created sessions</Label>
+                            <Textarea id="bulk-notes" v-model="bulkAddForm.notes" rows="4" />
+                            <InputError :message="bulkAddForm.errors.notes" />
+                        </div>
+
+                        <DialogFooter>
+                            <Button type="button" variant="outline" @click="isBulkAddOpen = false">
+                                Cancel
+                            </Button>
+                            <Button type="submit" :disabled="bulkAddForm.processing">
+                                Create sessions
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     </AppLayout>
 </template>
